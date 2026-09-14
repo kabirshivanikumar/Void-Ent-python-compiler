@@ -1,0 +1,22 @@
+{
+  "aiGeneratorEnabled": true,
+  "models": [
+    "openai/gpt-4o-mini",
+    "anthropic/claude-3.5-haiku",
+    "meta-llama/llama-3.1-8b-instruct",
+    "google/gemini-flash-1.5"
+  ],
+  "sponsorSidebar": {
+    "enabled": true,
+    "title": "Deploy on the Edge",
+    "description": "Ship your next tool globally with sub-50ms latency.",
+    "linkText": "Learn more \u2192",
+    "linkUrl": "#"
+  },
+  "sponsorBottom": {
+    "enabled": true,
+    "title": "Learn Real Python \u2014 free interactive course",
+    "linkText": "Explore \u2192",
+    "linkUrl": "#"
+  }
+}
