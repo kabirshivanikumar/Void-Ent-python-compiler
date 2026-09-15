@@ -1,11 +1,5 @@
 {
   "aiGeneratorEnabled": true,
-  "models": [
-    "openai/gpt-4o-mini",
-    "anthropic/claude-3.5-haiku",
-    "meta-llama/llama-3.1-8b-instruct",
-    "google/gemini-flash-1.5"
-  ],
   "sponsorSidebar": {
     "enabled": true,
     "title": "Deploy on the Edge",
