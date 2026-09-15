@@ -48,16 +48,13 @@
   <div id="saveMsg" class="hidden text-xs font-mono-custom rounded-lg px-3 py-2 mb-4"></div>
 
   <section class="glass rounded-2xl p-5 mb-5">
-    <div class="text-sm font-medium text-white mb-4">AI Code Generator</div>
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between">
       <div>
-        <div class="text-sm text-white">Enabled</div>
-        <div class="text-xs text-[var(--muted)]">Show the "Generate" box on the main site.</div>
+        <div class="text-sm font-medium text-white">AI Assistant</div>
+        <div class="text-xs text-[var(--muted)] mt-1 font-mono-custom">Model is fixed to meta-llama/llama-3.1-8b-instruct in the code.</div>
       </div>
       <div id="toggleAiEnabled" class="toggle"><div class="dot"></div></div>
     </div>
-    <label class="block text-xs text-[var(--muted)] mb-1 font-mono-custom">Models (one per line, OpenRouter model IDs)</label>
-    <textarea id="modelsInput" rows="4" class="w-full rounded-lg px-3 py-2 text-xs font-mono-custom"></textarea>
   </section>
 
   <section class="glass rounded-2xl p-5 mb-5">
@@ -152,7 +149,6 @@ async function enterDashboard(){
   const s = await res.json();
 
   setToggle(document.getElementById('toggleAiEnabled'), s.aiGeneratorEnabled !== false);
-  document.getElementById('modelsInput').value = (s.models || []).join('\n');
 
   const sb = s.sponsorSidebar || {};
   setToggle(document.getElementById('toggleSponsorSidebar'), !!sb.enabled);
@@ -184,7 +180,6 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
 
   const settings = {
     aiGeneratorEnabled: getToggle(document.getElementById('toggleAiEnabled')),
-    models: document.getElementById('modelsInput').value.split('\n').map(s=>s.trim()).filter(Boolean),
     sponsorSidebar: {
       enabled: getToggle(document.getElementById('toggleSponsorSidebar')),
       title: document.getElementById('sponsorSidebarTitle').value,
@@ -220,7 +215,6 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   }
 });
 
-// Re-use a password already verified this session, if any.
 (function tryResume(){
   const saved = sessionStorage.getItem('void_admin_pw');
   if(saved){
