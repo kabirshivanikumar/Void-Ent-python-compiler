@@ -496,6 +496,14 @@ async function generateWithAI(){
   renderAiHistory();
   aiPromptInput.value = '';
 
+  // Clear the editor immediately so old code can't be run/edited while the
+  // AI is mid-generation and end up mixed with what comes back. Keep a copy
+  // so we can restore it if the request fails.
+  const previousCode = codeInput.value;
+  codeInput.value = '# Generating code…';
+  codeInput.disabled = true;
+  updateLineCount();
+
   const contextToSend = aiHistory
     .slice(0, -1)
     .slice(-AI_MAX_TURNS * 2)
@@ -507,7 +515,7 @@ async function generateWithAI(){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt: userPrompt,
-        currentCode: codeInput.value,
+        currentCode: previousCode,
         history: contextToSend
       })
     });
@@ -518,11 +526,15 @@ async function generateWithAI(){
       logLine('AIError: ' + (data.error || `request failed (${res.status})`), 't-err');
       aiHistory.push({ role: 'assistant', content: '(request failed)', displayText: '⚠ request failed — see console' });
       renderAiHistory();
+      codeInput.value = previousCode;
+      updateLineCount();
       return;
     }
 
     if(!data.code){
       logLine('ResponseError: no content returned by the model.', 't-err');
+      codeInput.value = previousCode;
+      updateLineCount();
       return;
     }
 
@@ -537,7 +549,10 @@ async function generateWithAI(){
     renderAiHistory();
   }catch(err){
     logLine('NetworkError: ' + (err.message || String(err)), 't-err');
+    codeInput.value = previousCode;
+    updateLineCount();
   }finally{
+    codeInput.disabled = false;
     aiGenerateBtn.disabled = false;
     aiGenSpinner.classList.add('hidden');
     aiGenLabel.textContent = '✨ Generate';
