@@ -8,12 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root{
     --bg:#0b0f19; --panel:#10141f; --border:#1e2536;
     --cyan:#22d3ee; --emerald:#34d399; --text:#dbe3f0; --muted:#7c88a3;
   }
   *{box-sizing:border-box;}
+  html, body{height:100%;}
   body{
     background:
       radial-gradient(1200px 600px at 10% -10%, rgba(34,211,238,0.08), transparent 60%),
@@ -21,7 +23,7 @@
       var(--bg);
     color:var(--text);
     font-family:'Space Grotesk', sans-serif;
-    min-height:100vh;
+    overflow:hidden;
   }
   .font-mono-custom{font-family:'Space Mono', monospace;}
   ::-webkit-scrollbar{width:8px;height:8px;}
@@ -60,43 +62,44 @@
   }
   @keyframes spin{to{transform:rotate(360deg);}}
   .status-dot{width:7px;height:7px;border-radius:9999px;}
+
+  /* AI Assistant panel */
+  .ai-panel{
+    background:linear-gradient(160deg, rgba(34,211,238,0.10), rgba(16,20,31,0.75));
+    border:1px solid rgba(34,211,238,0.3);
+    box-shadow:0 0 30px rgba(34,211,238,0.06);
+  }
+  .ai-turn{border-radius:10px; padding:8px 12px; font-size:12px; line-height:1.5;}
+  .ai-turn.user{background:rgba(34,211,238,0.08); border:1px solid rgba(34,211,238,0.2); color:#e5edf9;}
+  .ai-turn.assistant{background:rgba(52,211,153,0.06); border:1px solid rgba(52,211,153,0.18); color:#c9f7e3;}
+  .ai-role{font-size:9px; text-transform:uppercase; letter-spacing:.08em; opacity:.65; margin-bottom:3px; font-family:'Space Mono', monospace;}
 </style>
 </head>
-<body class="min-h-screen">
+<body class="h-screen">
 
-<div class="flex min-h-screen">
+<div class="flex h-screen">
 
-  <aside class="hidden lg:flex flex-col w-72 shrink-0 border-r border-[var(--border)] bg-[var(--panel)]/60 p-5">
-    <div class="flex items-center gap-3 mb-8">
-      <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-400/20 to-emerald-400/20 border border-cyan-400/30 flex items-center justify-center glow-cyan">
-        <span class="text-cyan-300 font-bold text-lg">⌁</span>
+  <aside class="hidden lg:flex flex-col w-64 shrink-0 border-r border-[var(--border)] bg-[var(--panel)]/60 p-4">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400/20 to-emerald-400/20 border border-cyan-400/30 flex items-center justify-center glow-cyan">
+        <span class="text-cyan-300 font-bold text-base">⌁</span>
       </div>
       <div>
-        <div class="font-semibold tracking-wide text-white leading-tight">VOID<span class="text-cyan-400">/</span>ENT</div>
-        <div class="text-[11px] text-[var(--muted)] font-mono-custom">voidenterprises.xyz</div>
+        <div class="font-semibold tracking-wide text-white leading-tight text-sm">VOID<span class="text-cyan-400">/</span>ENT</div>
+        <div class="text-[10px] text-[var(--muted)] font-mono-custom">voidenterprises.xyz</div>
       </div>
     </div>
 
-    <div class="text-[10px] uppercase tracking-widest text-[var(--muted)] font-mono-custom mb-2">Samples</div>
-    <nav class="space-y-1 overflow-y-auto max-h-48" id="sampleNavDesktop"></nav>
+    <div class="flex-1"></div>
 
-    <div id="aiSectionDesktop" class="text-[10px] uppercase tracking-widest text-[var(--muted)] font-mono-custom mb-2 mt-6 flex items-center justify-between">
-      <span>AI Code Generator</span>
-      <span class="text-cyan-400">⚡</span>
-    </div>
-    <div id="aiControlsDesktop" class="space-y-2 flex-1">
-      <select id="openrouterModel" class="w-full bg-[#0d1220] border border-[var(--border)] rounded-lg px-2 py-2 text-xs text-[var(--muted)] focus:outline-none focus:border-cyan-400/60"></select>
-      <div class="text-[10px] text-[var(--muted)] leading-relaxed font-mono-custom">Requests are handled by our server — no API key needed on your end.</div>
-    </div>
-
-    <div id="sponsorSidebarCard" class="sponsor-card rounded-xl p-4 mt-6 hidden">
+    <div id="sponsorSidebarCard" class="sponsor-card rounded-xl p-4 mb-4 hidden">
       <div class="text-[10px] uppercase tracking-widest text-cyan-300 mb-2 font-mono-custom">Sponsored</div>
       <div id="sponsorSidebarTitle" class="text-sm font-medium text-white mb-1"></div>
       <p id="sponsorSidebarDesc" class="text-xs text-[var(--muted)] mb-3 leading-relaxed"></p>
       <a id="sponsorSidebarLink" href="#" class="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200 font-mono-custom"></a>
     </div>
 
-    <div class="mt-3 text-[10px] text-[var(--muted)] font-mono-custom">runtime: <span id="runtimeStatusDesktop" class="text-amber-400">loading…</span></div>
+    <div class="text-[10px] text-[var(--muted)] font-mono-custom">runtime: <span id="runtimeStatusDesktop" class="text-amber-400">loading…</span></div>
   </aside>
 
   <div class="lg:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between px-4 py-3 bg-[#0b0f19]/90 backdrop-blur border-b border-[var(--border)]">
@@ -112,38 +115,62 @@
   </div>
 
   <div id="mobileOverlay" class="lg:hidden fixed inset-0 bg-black/60 z-40 hidden"></div>
-  <aside id="mobileSidebar" class="lg:hidden fixed top-0 left-0 z-50 w-72 h-full bg-[var(--panel)] border-r border-[var(--border)] p-5 -translate-x-full overflow-y-auto">
+  <aside id="mobileSidebar" class="lg:hidden fixed top-0 left-0 z-50 w-64 h-full bg-[var(--panel)] border-r border-[var(--border)] p-5 -translate-x-full overflow-y-auto">
     <div class="flex items-center justify-between mb-6">
       <span class="font-semibold text-white">Menu</span>
       <button id="closeMenuBtn" class="p-1 text-[var(--muted)]">✕</button>
     </div>
-    <div class="text-[10px] uppercase tracking-widest text-[var(--muted)] font-mono-custom mb-2">Samples</div>
-    <nav class="space-y-1" id="sampleNavMobile"></nav>
-
-    <div id="aiSectionMobile" class="text-[10px] uppercase tracking-widest text-[var(--muted)] font-mono-custom mb-2 mt-6">AI Code Generator</div>
-    <div id="aiControlsMobile" class="space-y-2">
-      <select id="openrouterModelMobile" class="w-full bg-[#0d1220] border border-[var(--border)] rounded-lg px-2 py-2 text-xs text-[var(--muted)] focus:outline-none focus:border-cyan-400/60"></select>
+    <div id="sponsorSidebarCardMobile" class="sponsor-card rounded-xl p-4 mb-4 hidden">
+      <div class="text-[10px] uppercase tracking-widest text-cyan-300 mb-2 font-mono-custom">Sponsored</div>
+      <div id="sponsorSidebarTitleMobile" class="text-sm font-medium text-white mb-1"></div>
+      <p id="sponsorSidebarDescMobile" class="text-xs text-[var(--muted)] mb-3 leading-relaxed"></p>
+      <a id="sponsorSidebarLinkMobile" href="#" class="inline-flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200 font-mono-custom"></a>
     </div>
-
-    <div class="mt-3 text-[10px] text-[var(--muted)] font-mono-custom">runtime: <span id="runtimeStatusMobile" class="text-amber-400">loading…</span></div>
+    <div class="text-[10px] text-[var(--muted)] font-mono-custom">runtime: <span id="runtimeStatusMobile" class="text-amber-400">loading…</span></div>
   </aside>
 
-  <main class="flex-1 min-w-0 pt-16 lg:pt-0">
-    <div class="max-w-6xl mx-auto p-5 sm:p-8">
+  <main class="flex-1 min-w-0 pt-14 lg:pt-0 flex flex-col h-screen overflow-hidden">
+    <div class="flex-1 min-h-0 flex flex-col px-4 sm:px-6 py-4">
 
-      <header class="mb-6 fade-in">
-        <div class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Python Simulator</div>
-        <div class="text-sm text-[var(--muted)] mt-1">Write and execute real, unrestricted Python in an in-browser CPython (WASM) sandbox.</div>
+      <header class="mb-3 fade-in shrink-0 flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <div class="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">Python Simulator</div>
+          <div class="text-xs text-[var(--muted)]">CPython (WASM) sandbox, in your browser.</div>
+        </div>
+        <div class="glass rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs">
+          <span id="engineStatusDot" class="status-dot bg-amber-400"></span>
+          <span id="engineStatusText" class="text-[var(--muted)]">Booting runtime…</span>
+        </div>
       </header>
 
-      <div class="glass rounded-xl px-4 py-2.5 mb-4 flex items-center gap-2 text-xs">
-        <span id="engineStatusDot" class="status-dot bg-amber-400"></span>
-        <span id="engineStatusText" class="text-[var(--muted)]">Booting Python runtime (Pyodide/WASM)… first load may take a few seconds.</span>
+      <!-- AI Assistant: fixed model, follow-up context -->
+      <div id="aiPanel" class="ai-panel rounded-xl p-3 sm:p-4 mb-3 shrink-0">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-cyan-300 text-base leading-none">✨</span>
+            <span class="text-sm font-semibold text-white">AI Assistant</span>
+          </div>
+          <button id="aiNewChatBtn" class="text-[11px] text-[var(--muted)] hover:text-cyan-300 font-mono-custom">new chat ✕</button>
+        </div>
+
+        <div id="aiHistoryEmpty" class="text-xs text-[var(--muted)] mb-2">
+          Describe what you want built, then keep chatting here to ask for tweaks.
+        </div>
+        <div id="aiHistoryEl" class="space-y-2 mb-2 max-h-40 overflow-y-auto hidden"></div>
+
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input id="aiPromptInput" type="text" placeholder="e.g. 'a function that reverses a linked list', then 'now add tests for it'…"
+            class="flex-1 bg-[#0d1220] border border-[var(--border)] rounded-lg px-3 py-2.5 text-sm text-[var(--text)] focus:outline-none focus:border-cyan-400/60" />
+          <button id="aiGenerateBtn" class="btn-primary rounded-lg px-5 py-2.5 text-sm font-medium text-cyan-200 whitespace-nowrap flex items-center justify-center gap-2">
+            <span id="aiGenSpinner" class="spinner hidden"></span>
+            <span id="aiGenLabel">✨ Generate</span>
+          </button>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        <div class="glass rounded-2xl p-4 flex flex-col">
-          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div id="captureArea" class="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div class="glass rounded-2xl p-4 flex flex-col min-h-0">
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2 shrink-0">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
               <span class="text-sm font-medium text-white">Editor</span>
@@ -151,17 +178,8 @@
             </div>
           </div>
 
-          <div id="aiRow" class="mb-3 flex flex-col sm:flex-row gap-2">
-            <input id="aiPromptInput" type="text" placeholder="Describe the code you want, e.g. 'a function that reverses a linked list'…"
-              class="flex-1 bg-[#0d1220] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--text)] focus:outline-none focus:border-cyan-400/60" />
-            <button id="aiGenerateBtn" class="btn-primary rounded-lg px-4 py-2 text-xs font-medium text-cyan-200 whitespace-nowrap flex items-center justify-center gap-2">
-              <span id="aiGenSpinner" class="spinner hidden"></span>
-              <span id="aiGenLabel">✨ Generate</span>
-            </button>
-          </div>
-
-          <textarea id="codeInput" spellcheck="false" class="codearea flex-1 min-h-[340px] w-full bg-[#0d1220] border border-[var(--border)] rounded-xl p-4 text-sm text-[#d7e0f5] focus:outline-none focus:border-cyan-400/60 resize-none leading-relaxed"></textarea>
-          <div class="flex items-center gap-2 mt-3 flex-wrap">
+          <textarea id="codeInput" spellcheck="false" class="codearea flex-1 min-h-0 w-full bg-[#0d1220] border border-[var(--border)] rounded-xl p-4 text-sm text-[#d7e0f5] focus:outline-none focus:border-cyan-400/60 resize-none leading-relaxed"></textarea>
+          <div class="flex items-center gap-2 mt-3 flex-wrap shrink-0">
             <button id="runBtn" class="btn-primary rounded-lg px-4 py-2 text-sm font-medium text-cyan-200 flex items-center gap-2" disabled>
               <span id="runBtnSpinner" class="spinner hidden"></span>
               <span id="runBtnLabel">▶ Run</span>
@@ -171,26 +189,30 @@
           </div>
         </div>
 
-        <div class="glass rounded-2xl p-4 flex flex-col">
-          <div class="flex items-center justify-between mb-3">
+        <div class="glass rounded-2xl p-4 flex flex-col min-h-0">
+          <div class="flex items-center justify-between mb-3 shrink-0">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
               <span class="text-sm font-medium text-white">Console</span>
             </div>
             <button id="clearConsoleBtn" class="text-xs text-[var(--muted)] hover:text-cyan-300">clear ✕</button>
           </div>
-          <div id="console" class="terminal flex-1 min-h-[340px] rounded-xl p-4 text-xs overflow-y-auto space-y-1">
+          <div id="console" class="terminal flex-1 min-h-0 rounded-xl p-4 text-xs overflow-y-auto space-y-1">
             <div class="terminal-line t-info">// void-sim runtime initializing — loading CPython (WASM)...</div>
           </div>
         </div>
       </div>
 
-      <div id="sponsorBottomCard" class="mt-5 sponsor-card rounded-xl p-4 flex items-center justify-between flex-wrap gap-3 hidden">
-        <div>
-          <div class="text-[10px] uppercase tracking-widest text-emerald-300 font-mono-custom mb-1">Sponsored</div>
-          <div id="sponsorBottomTitle" class="text-sm text-white font-medium"></div>
+      <div class="mt-3 shrink-0 flex items-center justify-between flex-wrap gap-2">
+        <div id="sponsorBottomCard" class="sponsor-card rounded-xl px-4 py-2 flex items-center gap-3 hidden">
+          <span class="text-[10px] uppercase tracking-widest text-emerald-300 font-mono-custom">Sponsored</span>
+          <span id="sponsorBottomTitle" class="text-xs text-white font-medium"></span>
+          <a id="sponsorBottomLink" href="#" class="text-xs text-emerald-300 hover:text-emerald-200"></a>
         </div>
-        <a id="sponsorBottomLink" href="#" class="btn-ghost rounded-lg px-4 py-2 text-xs text-emerald-300"></a>
+        <button id="saveImageBtn" class="btn-ghost rounded-lg px-4 py-2 text-xs text-[var(--muted)] flex items-center gap-2 ml-auto">
+          <span id="saveImageSpinner" class="spinner hidden"></span>
+          <span id="saveImageLabel">📷 Save as Image</span>
+        </button>
       </div>
 
     </div>
@@ -206,83 +228,14 @@ document.getElementById('menuBtn').addEventListener('click', openMobileMenu);
 document.getElementById('closeMenuBtn').addEventListener('click', closeMobileMenu);
 mobileOverlay.addEventListener('click', closeMobileMenu);
 
-const PYTHON_SAMPLES = {
-  vars: {label:'Print & Variables', code:
+// Only used to seed the editor with a starting example — no sample picker is shown to users.
+const DEFAULT_CODE =
 `x = 10
 y = 20
 name = "VoidUser"
 print("Hello,", name)
 print("Sum:", x + y)
-print(x * y)`},
-  loop: {label:'For Loop', code:
-`for i in range(5):
-    print("Iteration:", i)
-
-total = 0
-for n in [1, 2, 3, 4, 5]:
-    total += n
-print("Total:", total)`},
-  cond: {label:'If / Else', code:
-`score = 82
-if score >= 90:
-    print("Grade: A")
-elif score >= 70:
-    print("Grade: B")
-else:
-    print("Grade: C")`},
-  func: {label:'Functions & Recursion', code:
-`def factorial(n):
-    if n <= 1:
-        return 1
-    return n * factorial(n - 1)
-
-for i in range(1, 8):
-    print(f"{i}! = {factorial(i)}")`},
-  data: {label:'Lists, Dicts & Imports', code:
-`import math, json
-
-data = {"name": "void", "scores": [88, 92, 76, 95]}
-avg = sum(data["scores"]) / len(data["scores"])
-squares = [n**2 for n in range(1, 6)]
-
-print("Average score:", round(avg, 2))
-print("Squares:", squares)
-print("Sqrt of 2:", math.sqrt(2))
-print(json.dumps(data, indent=2))`},
-  err: {label:'Error Demo', code:
-`print("Starting sequence...")
-print(undefined_variable)
-print("This line should not run")`},
-  input: {label:'Interactive input()', code:
-`name = input("Enter your name: ")
-age = input("Enter your age: ")
-print(f"Hello, {name}! In 10 years you'll be {int(age) + 10}.")`},
-  inputfn: {label:'input() inside a function', code:
-`def ask_favorite():
-    fav = input("What's your favorite language? ")
-    print(f"Nice, {fav} is a great choice!")
-
-print("Quick survey:")
-ask_favorite()`}
-};
-
-function buildSampleNav(containerId){
-  const el = document.getElementById(containerId);
-  el.innerHTML = Object.entries(PYTHON_SAMPLES).map(([key, s]) => `
-    <button data-sample="${key}" class="w-full text-left px-3 py-2 rounded-lg text-xs text-[var(--muted)] hover:text-cyan-200 hover:bg-cyan-400/5 border border-transparent hover:border-cyan-400/20 transition-all">
-      ${s.label}
-    </button>
-  `).join('');
-  el.querySelectorAll('button').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      codeInput.value = PYTHON_SAMPLES[btn.dataset.sample].code;
-      updateLineCount();
-      if(window.innerWidth < 1024) closeMobileMenu();
-    });
-  });
-}
-buildSampleNav('sampleNavDesktop');
-buildSampleNav('sampleNavMobile');
+print(x * y)`;
 
 const codeInput = document.getElementById('codeInput');
 const consoleEl = document.getElementById('console');
@@ -431,15 +384,15 @@ def __void_transform(source):
 
     pyodideReady = true;
     engineStatusDot.className = 'status-dot bg-emerald-400';
-    engineStatusText.textContent = 'Python runtime online — CPython (WASM) ready. Any valid Python code will run.';
+    engineStatusText.textContent = 'Runtime online';
     runtimeStatusDesktop.textContent = 'online'; runtimeStatusDesktop.className = 'text-emerald-400';
     runtimeStatusMobile.textContent = 'online'; runtimeStatusMobile.className = 'text-emerald-400';
     runBtn.disabled = false;
     consoleEl.innerHTML = '';
-    logLine('// void-sim runtime ready. click Run or load a sample from the sidebar.', 't-info');
+    logLine('// void-sim runtime ready. click Run to execute.', 't-info');
   }catch(err){
     engineStatusDot.className = 'status-dot bg-rose-400';
-    engineStatusText.textContent = 'Failed to load Python runtime — check your network connection and reload.';
+    engineStatusText.textContent = 'Runtime failed to load — reload the page.';
     runtimeStatusDesktop.textContent = 'offline'; runtimeStatusDesktop.className = 'text-rose-400';
     runtimeStatusMobile.textContent = 'offline'; runtimeStatusMobile.className = 'text-rose-400';
     logLine('RuntimeError: could not initialize Pyodide — ' + (err.message || err), 't-err');
@@ -483,22 +436,50 @@ async function runSimulation(){
 }
 runBtn.addEventListener('click', runSimulation);
 
-/* ---------------- AI Code Generator (server-proxied OpenRouter) ---------------- */
-const orModelDesktop = document.getElementById('openrouterModel');
-const orModelMobile = document.getElementById('openrouterModelMobile');
+/* ---------------- AI Assistant (server-proxied OpenRouter, follow-up context) ---------------- */
+// The model is fixed server-side (meta-llama/llama-3.1-8b-instruct) — there is
+// no model picker in this UI, and the client never chooses the model.
 const aiPromptInput = document.getElementById('aiPromptInput');
 const aiGenerateBtn = document.getElementById('aiGenerateBtn');
 const aiGenSpinner = document.getElementById('aiGenSpinner');
 const aiGenLabel = document.getElementById('aiGenLabel');
+const aiHistoryEl = document.getElementById('aiHistoryEl');
+const aiHistoryEmpty = document.getElementById('aiHistoryEmpty');
+const aiNewChatBtn = document.getElementById('aiNewChatBtn');
 
-function wireModelSync(a, b){
-  a.addEventListener('change', ()=>{ b.value = a.value; });
-  b.addEventListener('change', ()=>{ a.value = b.value; });
+// Small sliding context window: only the last few exchanges are kept and
+// sent to the server, which caps it further server-side too.
+const AI_MAX_TURNS = 6; // 6 user+assistant pairs = 12 messages
+let aiHistory = []; // [{role:'user'|'assistant', content:string}, ...]
+
+function renderAiHistory(){
+  if(aiHistory.length === 0){
+    aiHistoryEl.classList.add('hidden');
+    aiHistoryEmpty.classList.remove('hidden');
+    return;
+  }
+  aiHistoryEmpty.classList.add('hidden');
+  aiHistoryEl.classList.remove('hidden');
+  aiHistoryEl.innerHTML = aiHistory.map(turn => `
+    <div class="ai-turn ${turn.role}">
+      <div class="ai-role">${turn.role === 'user' ? 'You' : 'AI'}</div>
+      <div>${turn.displayText}</div>
+    </div>
+  `).join('');
+  aiHistoryEl.scrollTop = aiHistoryEl.scrollHeight;
 }
-wireModelSync(orModelDesktop, orModelMobile);
+
+aiNewChatBtn.addEventListener('click', ()=>{
+  aiHistory = [];
+  renderAiHistory();
+  logLine('// AI chat context cleared.', 't-info');
+});
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 async function generateWithAI(){
-  const model = orModelDesktop.value;
   const userPrompt = aiPromptInput.value.trim();
 
   if(!userPrompt){
@@ -509,19 +490,34 @@ async function generateWithAI(){
   aiGenerateBtn.disabled = true;
   aiGenSpinner.classList.remove('hidden');
   aiGenLabel.textContent = 'Generating…';
-  logLine(`$ ai-generate "${userPrompt}" (${model})`, 't-echo');
+  logLine(`$ ai-generate "${userPrompt}"`, 't-echo');
+
+  aiHistory.push({ role: 'user', content: userPrompt, displayText: escapeHtml(userPrompt) });
+  renderAiHistory();
+  aiPromptInput.value = '';
+
+  const contextToSend = aiHistory
+    .slice(0, -1)
+    .slice(-AI_MAX_TURNS * 2)
+    .map(({role, content}) => ({role, content}));
 
   try{
     const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: userPrompt, model })
+      body: JSON.stringify({
+        prompt: userPrompt,
+        currentCode: codeInput.value,
+        history: contextToSend
+      })
     });
 
     const data = await res.json();
 
     if(!res.ok){
       logLine('AIError: ' + (data.error || `request failed (${res.status})`), 't-err');
+      aiHistory.push({ role: 'assistant', content: '(request failed)', displayText: '⚠ request failed — see console' });
+      renderAiHistory();
       return;
     }
 
@@ -533,6 +529,12 @@ async function generateWithAI(){
     codeInput.value = data.code;
     updateLineCount();
     logLine('// AI-generated code loaded into the editor. click Run to execute it.', 't-info');
+
+    aiHistory.push({ role: 'assistant', content: data.code, displayText: 'Updated the code in the editor ✓' });
+    if(aiHistory.length > AI_MAX_TURNS * 2){
+      aiHistory = aiHistory.slice(-AI_MAX_TURNS * 2);
+    }
+    renderAiHistory();
   }catch(err){
     logLine('NetworkError: ' + (err.message || String(err)), 't-err');
   }finally{
@@ -543,6 +545,36 @@ async function generateWithAI(){
 }
 aiGenerateBtn.addEventListener('click', generateWithAI);
 aiPromptInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') generateWithAI(); });
+renderAiHistory();
+
+/* ---------------- Save as Image (editor + console only) ---------------- */
+const saveImageBtn = document.getElementById('saveImageBtn');
+const saveImageSpinner = document.getElementById('saveImageSpinner');
+const saveImageLabel = document.getElementById('saveImageLabel');
+
+saveImageBtn.addEventListener('click', async ()=>{
+  saveImageBtn.disabled = true;
+  saveImageSpinner.classList.remove('hidden');
+  saveImageLabel.textContent = 'Saving…';
+  try{
+    const target = document.getElementById('captureArea');
+    const canvas = await html2canvas(target, {
+      backgroundColor: '#0b0f19',
+      scale: Math.min(2, window.devicePixelRatio || 1),
+      useCORS: true
+    });
+    const link = document.createElement('a');
+    link.download = `void-sim-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }catch(err){
+    logLine('ImageError: could not save screenshot — ' + (err.message || err), 't-err');
+  }finally{
+    saveImageBtn.disabled = false;
+    saveImageSpinner.classList.add('hidden');
+    saveImageLabel.textContent = '📷 Save as Image';
+  }
+});
 
 /* ---------------- Site settings (admin-controlled) ---------------- */
 async function loadSiteSettings(){
@@ -550,37 +582,26 @@ async function loadSiteSettings(){
     const res = await fetch('/api/settings');
     const settings = await res.json();
 
-    // Models dropdown
-    const models = Array.isArray(settings.models) && settings.models.length
-      ? settings.models
-      : ['openai/gpt-4o-mini'];
-    [orModelDesktop, orModelMobile].forEach(sel=>{
-      sel.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+    const aiEnabled = settings.aiGeneratorEnabled !== false;
+    document.getElementById('aiPanel').classList.toggle('hidden', !aiEnabled);
+
+    const sb = settings.sponsorSidebar || {};
+    [ {card:'sponsorSidebarCard', title:'sponsorSidebarTitle', desc:'sponsorSidebarDesc', link:'sponsorSidebarLink'},
+      {card:'sponsorSidebarCardMobile', title:'sponsorSidebarTitleMobile', desc:'sponsorSidebarDescMobile', link:'sponsorSidebarLinkMobile'}
+    ].forEach(ids=>{
+      const card = document.getElementById(ids.card);
+      if(sb.enabled){
+        document.getElementById(ids.title).textContent = sb.title || '';
+        document.getElementById(ids.desc).textContent = sb.description || '';
+        const link = document.getElementById(ids.link);
+        link.textContent = sb.linkText || 'Learn more →';
+        link.href = sb.linkUrl || '#';
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
     });
 
-    // AI generator on/off
-    const aiEnabled = settings.aiGeneratorEnabled !== false;
-    document.getElementById('aiRow').classList.toggle('hidden', !aiEnabled);
-    document.getElementById('aiSectionDesktop').classList.toggle('hidden', !aiEnabled);
-    document.getElementById('aiControlsDesktop').classList.toggle('hidden', !aiEnabled);
-    document.getElementById('aiSectionMobile').classList.toggle('hidden', !aiEnabled);
-    document.getElementById('aiControlsMobile').classList.toggle('hidden', !aiEnabled);
-
-    // Sidebar sponsor card
-    const sb = settings.sponsorSidebar || {};
-    const sbCard = document.getElementById('sponsorSidebarCard');
-    if(sb.enabled){
-      document.getElementById('sponsorSidebarTitle').textContent = sb.title || '';
-      document.getElementById('sponsorSidebarDesc').textContent = sb.description || '';
-      const link = document.getElementById('sponsorSidebarLink');
-      link.textContent = sb.linkText || 'Learn more →';
-      link.href = sb.linkUrl || '#';
-      sbCard.classList.remove('hidden');
-    } else {
-      sbCard.classList.add('hidden');
-    }
-
-    // Bottom sponsor bar
     const bb = settings.sponsorBottom || {};
     const bbCard = document.getElementById('sponsorBottomCard');
     if(bb.enabled){
@@ -593,13 +614,12 @@ async function loadSiteSettings(){
       bbCard.classList.add('hidden');
     }
   }catch(e){
-    // Settings are optional decoration — fail silently and keep defaults hidden.
     console.warn('Could not load site settings:', e);
   }
 }
 loadSiteSettings();
 
-codeInput.value = PYTHON_SAMPLES.vars.code;
+codeInput.value = DEFAULT_CODE;
 updateLineCount();
 </script>
 </body>
